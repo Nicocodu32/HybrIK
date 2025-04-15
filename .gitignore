@@ -154,3 +154,4 @@ hybrik/version.py
 examples/
 data_gen/
 pretrained_models/
+setup.py

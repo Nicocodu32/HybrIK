@@ -74,12 +74,14 @@ def recognize_video_ext(ext=''):
         return cv2.VideoWriter_fourcc(*'mp4v'), '.mp4'
 
 parser = argparse.ArgumentParser(description='HybrIK Demo')
-parser.add_argument('--gpu', help='gpu', default=0, type=int)
+parser.add_argument('--gpu', help='gpu', default='0', type=str)
 parser.add_argument('--video-name', help='video name', default='', type=str)
 parser.add_argument('--out-dir', help='output folder', default='', type=str)
-parser.add_argument('--save-pk', default=False, dest='save_pk', help='save prediction', action='store_true')
+parser.add_argument('--save-pk', default=True, dest='save_pk', help='save prediction', action='store_true')
 
 opt = parser.parse_args()
+if opt.gpu == '0':
+    opt.gpu = 0
 
 cfg_file = './configs/smplx/256x192_hrnet_rle_smplx_kid.yaml'
 CKPT = './pretrained_models/hybrikx_rle_hrnet.pth'
@@ -153,8 +155,12 @@ if type(save_dict) == dict:
 else:
     hybrik_model.load_state_dict(save_dict)
 
-det_model.to('cpu')
-hybrik_model.to('cpu')
+if opt.gpu == 0:
+    det_model.cuda(opt.gpu)
+    hybrik_model.cuda(opt.gpu)
+else:
+    det_model.to(opt.gpu)
+    hybrik_model.to(opt.gpu)
 det_model.eval()
 hybrik_model.eval()
 
@@ -192,7 +198,7 @@ for img_path in tqdm(img_path_list):
 
     with torch.no_grad():
         input_image = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2RGB)
-        det_input = det_transform(input_image).to('cpu')
+        det_input = det_transform(input_image).to(opt.gpu)
         det_output = det_model([det_input])[0]
 
         if prev_box is None:
@@ -209,7 +215,7 @@ for img_path in tqdm(img_path_list):
 
         pose_input, bbox, img_center = transformation.test_transform(
             input_image.copy(), tight_bbox)
-        pose_input = pose_input.to('cpu')[None, :, :, :]
+        pose_input = pose_input.to(opt.gpu)[None, :, :, :]
 
         pose_output = hybrik_model(
             pose_input, flip_test=True,
