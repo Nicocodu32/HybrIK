@@ -1,18 +1,17 @@
 #!/bin/bash
 
-# This script is used to run the HybrIK pipeline for a given input video and output directory and gpu or not.
+# This script is used to run the HybrIK pipeline for a given input video and gpu or cpu.
 # It sets up the environment, runs the HybrIK pipeline, and then runs the post-processing script.
-# Usage: ./pipe_hybrik.sh <input_video> <output_directory> <gpu_or_not>
-# Example: ./pipe_hybrik.sh input.mp4 output_dir
+# Usage: ./pipe_hybrik.sh <input_video> <gpu_or_cpu>
+# Example: ./pipe_hybrik.sh camera_0 cpu
 # Check if the correct number of arguments is provided
-if [ "$#" -ne 3 ]; then
-    echo "Usage: $0 <input_video> <output_directory> <gpu_or_not>"
+if [ "$#" -ne 2 ]; then
+    echo "Usage: $0 <input_video> <gpu_or_cpu>"
     exit 1
 fi
-# Get the input video and output directory from the command line arguments
+# Get the input video and gpu or cpu from the command line arguments
 input_video=$1
-output_dir=$2
-gpu_or_not=$3
+gpu_or_cpu=$2
 # Set the path to the HybrIK repository
 repo_path=$(dirname "$(realpath "$0")")
 # Set the path to the HybrIK data directory
@@ -26,12 +25,12 @@ if [ ! -f "examples/$input_video.mp4" ]; then
     exit 1
 fi
 # Check if the output directory exists, if not create it
-if [ ! -d "$output_dir" ]; then
-    mkdir -p "$output_dir"
+if [ ! -d "$output_path" ]; then
+    mkdir -p "$output_path"
 fi
 
 # Run the HybrIK pipeline
-python "$repo_path/scripts/smplx_wo_rendering.py" --gpu "$gpu_or_not" --video-name "examples/${input_video}.mp4" --out-dir "$output_path" --save-pk
+python "$repo_path/scripts/smplx_wo_rendering.py" --gpu "$gpu_or_cpu" --video-name "examples/${input_video}.mp4" --out-dir "$output_path" --save-pk
 
 # Check if the HybrIK pipeline ran successfully
 if [ $? -ne 0 ]; then
