@@ -169,22 +169,19 @@ video_basename = os.path.basename(opt.video_name).split('.')[0]
 
 if not os.path.exists(opt.out_dir):
     os.makedirs(opt.out_dir)
-if not os.path.exists(os.path.join(opt.out_dir, 'raw_images')):
-    os.makedirs(os.path.join(opt.out_dir, 'raw_images'))
+if not os.path.exists(os.path.join(opt.out_dir, f'raw_images_{video_basename}')):
+    os.makedirs(os.path.join(opt.out_dir, f'raw_images_{video_basename}'))
 
-_, info, _ = get_video_info(opt.video_name)
-video_basename = os.path.basename(opt.video_name).split('.')[0]
+os.system(f'ffmpeg -i {opt.video_name} {opt.out_dir}/raw_images_{video_basename}/{video_basename}-%06d.png')
 
-os.system(f'ffmpeg -i {opt.video_name} {opt.out_dir}/raw_images/{video_basename}-%06d.png')
-
-files = os.listdir(f'{opt.out_dir}/raw_images')
+files = os.listdir(f'{opt.out_dir}/raw_images_{video_basename}')
 files.sort()
 
 img_path_list = []
 
 for file in tqdm(files):
     if not os.path.isdir(file) and file[-4:] in ['.jpg', '.png']:
-        img_path = os.path.join(opt.out_dir, 'raw_images', file)
+        img_path = os.path.join(opt.out_dir, f'raw_images_{video_basename}', file)
         img_path_list.append(img_path)
 
 prev_box = None
@@ -293,4 +290,4 @@ if opt.save_pk:
     with open(os.path.join(opt.out_dir, f'res_{video_basename}_x.pk'), 'wb') as fid:
         pk.dump(res_db, fid)
 
-os.system(f'rm -rf {opt.out_dir}/raw_images')
+os.system(f'rm -rf {opt.out_dir}/raw_images_{video_basename}')
