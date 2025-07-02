@@ -128,8 +128,6 @@ res_keys = [
     'img_path'
     ]
 
-res_db = {k: [] for k in res_keys}
-
 transformation = SimpleTransform3DSMPLX(
     dummpy_set, scale_factor=cfg.DATASET.SCALE_FACTOR,
     color_factor=cfg.DATASET.COLOR_FACTOR,
@@ -169,7 +167,8 @@ for subject in os.listdir(cosmik_data_path):
     for trial in os.listdir(mouv_path):
         trial_path = os.path.join(mouv_path, trial)
         for element in os.listdir(trial_path):
-            if ".mp4" in file:
+            if ".mp4" in element:
+                res_db = {k: [] for k in res_keys}
                 counter_prog += 1
                 video_path = os.path.join(trial_path, element)
 
@@ -292,7 +291,6 @@ for subject in os.listdir(cosmik_data_path):
 
                 n_frames = len(res_db['img_path'])
                 for k in res_db.keys():
-                    print(k)
                     res_db[k] = np.stack(res_db[k])
                     assert res_db[k].shape[0] == n_frames
 
