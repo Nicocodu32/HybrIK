@@ -74,12 +74,14 @@ def recognize_video_ext(ext=''):
         return cv2.VideoWriter_fourcc(*'mp4v'), '.mp4'
 
 parser = argparse.ArgumentParser(description='HybrIK auomated on cosmik')
-parser.add_argument('--gpu', help='gpu', default='0', type=str)
 parser.add_argument('--out-dir', help='output folder', default='output', type=str)
 
 opt = parser.parse_args()
-if opt.gpu == '0':
-    opt.gpu = 0
+# remplace tout le bloc --gpu et les if/else par :
+
+
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
 
 cfg_file = './configs/smplx/256x192_hrnet_rle_smplx_kid.yaml'
 CKPT = './pretrained_models/hybrikx_rle_hrnet.pth'
@@ -151,12 +153,8 @@ if type(save_dict) == dict:
 else:
     hybrik_model.load_state_dict(save_dict)
 
-if opt.gpu == 0:
-    det_model.cuda(opt.gpu)
-    hybrik_model.cuda(opt.gpu)
-else:
-    det_model.to(opt.gpu)
-    hybrik_model.to(opt.gpu)
+det_model.to(device)
+hybrik_model.to(device)
 det_model.eval()
 hybrik_model.eval()
 
@@ -204,7 +202,7 @@ for subject in os.listdir(cosmik_data_path):
 
                     with torch.no_grad():
                         input_image = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2RGB)
-                        det_input = det_transform(input_image).to(opt.gpu)
+                        det_input = det_transform(input_image).to(device)
                         det_output = det_model([det_input])[0]
 
                         if prev_box is None:
@@ -221,12 +219,15 @@ for subject in os.listdir(cosmik_data_path):
 
                         pose_input, bbox, img_center = transformation.test_transform(
                             input_image.copy(), tight_bbox)
-                        pose_input = pose_input.to(opt.gpu)[None, :, :, :]
+                        pose_input = pose_input.to(device)[None, :, :, :]
+
+                        bboxes = torch.from_numpy(np.array(bbox)).to(device).unsqueeze(0).float()
+                        img_center_t = torch.from_numpy(img_center).to(device).unsqueeze(0).float()
 
                         pose_output = hybrik_model(
                             pose_input, flip_test=True,
-                            bboxes=torch.from_numpy(np.array(bbox)).to(pose_input.device).unsqueeze(0).float(),
-                            img_center=torch.from_numpy(img_center).to(pose_input.device).unsqueeze(0).float(),
+                            bboxes=bboxes,
+                            img_center=img_center_t,
                         )
 
                         transl = pose_output.transl.detach()
